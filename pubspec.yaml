@@ -1,0 +1,29 @@
+name: gazelle_mysql_plugin
+description: A starting point for Dart libraries or applications.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.4.4
+
+# Add regular dependencies here.
+dependencies:
+  equatable: ^2.0.5
+  gazelle_core: 
+    git:
+      url: https://github.com/GregoryPardini/gazelle.git
+      ref: feat-code-gen-model-attributes-type
+      path: packages/gazelle_core
+  gazelle_serialization: 
+    git:
+      url: https://github.com/GregoryPardini/gazelle.git
+      ref: feat-code-gen-model-attributes-type
+      path: packages/gazelle_serialization
+  
+  path: ^1.8.0
+  sqlite3: ^2.4.2
+  uuid: ^4.4.2
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0
