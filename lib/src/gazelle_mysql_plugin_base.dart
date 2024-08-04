@@ -12,8 +12,12 @@ import 'package:uuid/uuid.dart';
 class GazelleMysqlPluginBase implements GazellePlugin {
   // public attributes
   final List<Type> modelToCreate;
+  final DropType dropType;
 
-  GazelleMysqlPluginBase({required this.modelToCreate});
+  GazelleMysqlPluginBase({
+    required this.modelToCreate,
+    this.dropType = DropType.soft,
+  });
 
   // private attributes
   late final Database _db;
@@ -23,7 +27,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   Future<void> initialize(GazelleContext context) async {
     _db = sqlite3.open('gazelle.db');
 
-    _createTable(User);
+    _checkDbTables();
   }
 
   Future<String?> insert<T>(T model) async {
@@ -59,6 +63,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
 
     try {
       _db.execute(query, values);
+      return jsonData['id'];
     } catch (e) {
       throw Exception('Error inserting data: $e');
     }
@@ -141,22 +146,29 @@ class GazelleMysqlPluginBase implements GazellePlugin {
 
   void _checkDbTables() {
     final tables = SysQuery(_db).getTables();
-
-    for (var model in modelToCreate) {
+    for (var i = 0; i < modelToCreate.length; i++) {
+      final model = modelToCreate[i];
       // Check if the table exists and create it if it doesn't
       // Otherwise update the table schema adding or removing columns
-      if (!tables.contains(model.toString().toLowerCase())) {
+      if (tables
+          .where((element) => element.name == model.toString().toLowerCase())
+          .isEmpty) {
         _createTable(model);
       } else {
-        TableUpdater(_db).updateTableSchema(model);
+        TableUpdater(_db).updateTableSchema(
+          entity: model,
+          dropType: dropType,
+          currentSchema: tables[i].columnsType,
+        );
+        _modelTables.add(model);
       }
 
       for (var table in tables) {
         if (!modelToCreate
             .map((e) => e.toString().toLowerCase())
-            .contains(table)) {
+            .contains(table.name)) {
           // notify the user that the table is not used anymore
-          print('Table $table is not used anymore');
+          print('Table ${table.name} is not used anymore');
         }
       }
     }

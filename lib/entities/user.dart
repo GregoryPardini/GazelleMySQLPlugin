@@ -6,6 +6,7 @@ class User {
   final DateTime dateOfBirth;
   final double height;
   final bool isDeleted;
+  final String? password;
 
   const User({
     required this.id,
@@ -15,5 +16,6 @@ class User {
     required this.dateOfBirth,
     required this.height,
     required this.isDeleted,
+    required this.password,
   });
 }

@@ -13,6 +13,7 @@ class UserModelType extends GazelleModelType<User> {
       dateOfBirth: DateTime.parse(json["dateOfBirth"] as String),
       height: json["height"] as double,
       isDeleted: json["isDeleted"] == 0 ? false : true,
+      password: json["password"] as String?,
     );
   }
 
@@ -26,6 +27,7 @@ class UserModelType extends GazelleModelType<User> {
       "dateOfBirth": value.dateOfBirth.toIso8601String(),
       "height": value.height,
       "isDeleted": value.isDeleted,
+      "password": value.password,
     };
   }
 
@@ -38,5 +40,6 @@ class UserModelType extends GazelleModelType<User> {
         "dateOfBirth": "DateTime",
         "height": "double",
         "isDeleted": "bool",
+        "password": "String?",
       };
 }

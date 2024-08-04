@@ -15,14 +15,14 @@ class TableUpdater {
 
   TableUpdater(this._db);
 
-  Future<void> updateTableSchema(
-    Type entity, {
-    DropType dropType = DropType.soft,
+  Future<void> updateTableSchema({
+    required Type entity,
+    required Map<String, String> currentSchema,
+    required DropType dropType,
   }) async {
     var tableName = entity.toString().toLowerCase();
     var modelAttributes =
         BackendModelProvider().getModelTypeFor(entity).modelAttributes;
-    var currentSchema = SysQuery(_db).getCurrentSchema(tableName);
 
     // add columns that are missing
     for (var attributeName in modelAttributes.keys) {

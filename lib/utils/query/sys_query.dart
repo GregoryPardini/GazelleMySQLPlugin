@@ -1,5 +1,12 @@
 import 'package:sqlite3/sqlite3.dart';
 
+class TableInformation {
+  final String name;
+  final Map<String, String> columnsType;
+
+  TableInformation(this.name, this.columnsType);
+}
+
 class SysQuery {
   final Database _db;
 
@@ -31,22 +38,21 @@ class SysQuery {
     return schema;
   }
 
-  List<String> getTables() {
+  List<TableInformation> getTables() {
     // base query to get the tables
     final String query = '''
-      SELECT table_name
-      FROM information_schema.TABLES;
+      SELECT * FROM sqlite_master WHERE type='table';
     ''';
 
     // run the query and get the result
     try {
       final result = _db.select(query);
       // create a list to store the tables
-      final List<String> tables = [];
+      final List<TableInformation> tables = [];
 
       // iterate over the result and add the tables to the list
       for (var row in result) {
-        tables.add(row['TABLE_NAME']);
+        tables.add(TableInformation(row['name'], parseCreateTable(row['sql'])));
       }
 
       // return the tables
@@ -54,5 +60,42 @@ class SysQuery {
     } catch (e) {
       throw Exception('Failed to get tables: $e');
     }
+  }
+
+  Map<String, String> parseCreateTable(String createTableQuery) {
+    // Rimuove la parte iniziale e finale della query per isolare solo le definizioni delle colonne
+    final columnSectionStart = createTableQuery.indexOf('(') + 1;
+    final columnSectionEnd = createTableQuery.lastIndexOf(')');
+    final columnDefinitions =
+        createTableQuery.substring(columnSectionStart, columnSectionEnd).trim();
+
+    // Divide le definizioni in righe separate
+    List<String> columnLines = columnDefinitions.split(',');
+
+    // Mappa per mantenere i nomi delle colonne e i tipi
+    Map<String, String> columns = {};
+
+    // Espressione regolare per estrarre il nome della colonna e il tipo, inclusi i modificatori come NOT NULL
+    final columnRegex = RegExp(r'^\s*(\w+)\s+(.+?)\b(?:,|$)');
+
+    for (var line in columnLines) {
+      // Pulizia delle informazioni relative a PRIMARY KEY o altre keywords non necessarie
+      String cleanedLine = line.replaceAll('PRIMARY KEY', '').trim();
+
+      // Applica l'espressione regolare a ogni riga pulita
+      final match = columnRegex.firstMatch(cleanedLine);
+      if (match != null) {
+        String columnName = match.group(1)!;
+        String columnType =
+            match.group(2)!.trim(); // Assicura di rimuovere spazi extra
+
+        // Aggiunge solo se il nome della colonna non è vuoto
+        if (columnName.isNotEmpty) {
+          columns[columnName] = columnType;
+        }
+      }
+    }
+
+    return columns;
   }
 }
