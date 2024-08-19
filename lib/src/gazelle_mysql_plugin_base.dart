@@ -49,8 +49,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// The above code will insert a new user into the database
   /// and return the id of the inserted user
   Future<String?> insert<T>(T entity) async {
-    InsertTransaction<T> insertTransaction =
-        InsertTransaction<T>(entity: entity);
+    InsertTransaction insertTransaction = InsertTransaction(entity: entity);
 
     try {
       final id = insertTransaction.execute(

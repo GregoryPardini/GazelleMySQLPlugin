@@ -90,11 +90,11 @@ class QueryManager {
 
   /// Get the prepared statement insert for the given entity
   /// example: insert<User>();
-  PreparedStatement insert<T>() {
-    if (!_preparedStatements.containsKey(T)) {
+  PreparedStatement insert(dynamic entity) {
+    if (!_preparedStatements.containsKey(entity.runtimeType)) {
       throw Exception('Entity not prepared');
     }
-    return _preparedStatements[T]!['insert']!;
+    return _preparedStatements[entity.runtimeType]!['insert']!;
   }
 
   /// Get the prepared statement update for the given entity

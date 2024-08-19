@@ -4,20 +4,20 @@ import 'package:gazelle_mysql_plugin/utils/query/sys_query.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
-abstract class DbTransaction<T> {
-  T execute(QueryManager queryManager,
+abstract class DbTransaction {
+  dynamic execute(QueryManager queryManager,
       BackendModelProvider backendModelProvider, SysQuery sysQuery);
 }
 
-class InsertTransaction<T> implements DbTransaction<String?> {
-  final T entity;
+class InsertTransaction implements DbTransaction {
+  final dynamic entity;
 
   InsertTransaction({required this.entity});
 
   @override
   String? execute(QueryManager queryManager,
       BackendModelProvider backendModelProvider, SysQuery sysQuery) {
-    final PreparedStatement statement = queryManager.insert<T>();
+    final PreparedStatement statement = queryManager.insert(entity);
 
     // get the model type
     final modelType = backendModelProvider.getModelTypeFor(entity.runtimeType);
@@ -75,8 +75,8 @@ class InsertTransaction<T> implements DbTransaction<String?> {
   }
 }
 
-class UpdateTransaction<T> implements DbTransaction<T> {
-  final T entity;
+class UpdateTransaction implements DbTransaction {
+  final dynamic entity;
 
   UpdateTransaction({required this.entity});
 
