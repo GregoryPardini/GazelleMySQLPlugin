@@ -6,7 +6,7 @@ class UserModelType extends GazelleModelType<User> {
   @override
   User fromJson(Map<String, dynamic> json) {
     return User(
-      id: json["id"] as String,
+      id: json["id"] as String?,
       name: json["name"] as String,
       email: json["email"] as String,
       age: json["age"] as int,

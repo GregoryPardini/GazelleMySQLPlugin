@@ -1,6 +1,5 @@
 import 'package:gazelle_mysql_plugin/models/backend_model_provider.dart';
-import 'package:gazelle_mysql_plugin/utils/query/query_builder.dart';
-import 'package:gazelle_mysql_plugin/utils/query/sys_query.dart';
+import 'package:gazelle_mysql_plugin/utils/query/type_convert.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 enum DropType {
@@ -12,8 +11,10 @@ enum DropType {
 
 class TableUpdater {
   final Database _db;
+  final BackendModelProvider _backendModelProvider;
+  final TypeConvert _typeConvert;
 
-  TableUpdater(this._db);
+  TableUpdater(this._db, this._backendModelProvider, this._typeConvert);
 
   Future<void> updateTableSchema({
     required Type entity,
@@ -22,7 +23,7 @@ class TableUpdater {
   }) async {
     var tableName = entity.toString().toLowerCase();
     var modelAttributes =
-        BackendModelProvider().getModelTypeFor(entity).modelAttributes;
+        _backendModelProvider.getModelTypeFor(entity).modelAttributes;
 
     // add columns that are missing
     for (var attributeName in modelAttributes.keys) {
@@ -30,7 +31,7 @@ class TableUpdater {
         throw Exception('Attribute $attributeName not found in model');
       }
       final columnType =
-          QueryBuilder.toSqlType(modelAttributes[attributeName]!);
+          _typeConvert.toSqlType(modelAttributes[attributeName]!);
 
       if (!currentSchema.containsKey(attributeName)) {
         _addColumn(

@@ -1,30 +1,23 @@
 import 'package:gazelle_mysql_plugin/models/backend_model_provider.dart';
 
-class QueryBuilder {
-  static String createTable(Type modelType) {
-    final map =
-        BackendModelProvider().getModelTypeFor(modelType).modelAttributes;
+class TypeConvert {
+  final BackendModelProvider _modelProvider;
+  late final List<String> _customTypes;
 
-    var buffer = StringBuffer();
-    buffer.write(
-        'CREATE TABLE IF NOT EXISTS ${modelType.toString().toLowerCase()} (');
-
-    map.forEach((attribute, type) {
-      var sqlType = toSqlType(type);
-      buffer.write('$attribute $sqlType, ');
-    });
-
-    buffer.write('PRIMARY KEY(id));');
-
-    return buffer.toString();
+  TypeConvert({required BackendModelProvider modelProvider})
+      : _modelProvider = modelProvider {
+    _customTypes =
+        _modelProvider.modelTypes.entries.map((e) => e.key.toString()).toList();
   }
 
-  static String toSqlType(String type) {
+  /// convert a dart type to a SQL type
+  String toSqlType(String type) {
     String sqlType = '';
     bool isNullable = type.endsWith('?');
     if (isNullable) {
       type = type.substring(0, type.length - 1);
     }
+
     switch (type) {
       case 'String':
         sqlType = 'TEXT';
@@ -41,14 +34,20 @@ class QueryBuilder {
         sqlType = 'DATETIME';
         break;
       default:
-        throw Exception('Invalid type');
+        if (_customTypes.contains(type)) {
+          sqlType = 'TEXT';
+        } else {
+          throw Exception('Invalid type');
+        }
     }
+
     if (!isNullable) {
       sqlType += ' NOT NULL';
     }
     return sqlType;
   }
 
+  /// convert a SQL type to a dart type
   static String fromSqlType(String sqlType) {
     String dartType = '';
     bool isNullable = !sqlType.contains('NOT NULL');

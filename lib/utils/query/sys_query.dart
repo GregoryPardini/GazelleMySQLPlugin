@@ -10,7 +10,10 @@ class TableInformation {
 class SysQuery {
   final Database _db;
 
+  bool _isTransaction = false;
   SysQuery(this._db);
+
+  bool get isTransaction => _isTransaction;
 
   Map<String, String> getCurrentSchema(String tableName) {
     // base query to get the schema of the table
@@ -97,5 +100,38 @@ class SysQuery {
     }
 
     return columns;
+  }
+
+  /// Begin a transaction
+  Future<void> beginTransaction() async {
+    if (_isTransaction) return;
+    try {
+      _db.execute('BEGIN TRANSACTION;');
+      _isTransaction = true;
+    } catch (e) {
+      throw Exception('Failed to begin transaction: $e');
+    }
+  }
+
+  /// Commit a transaction
+  Future<void> commitTransaction() async {
+    if (!_isTransaction) return;
+    try {
+      _db.execute('COMMIT;');
+      _isTransaction = false;
+    } catch (e) {
+      throw Exception('Failed to commit transaction: $e');
+    }
+  }
+
+  /// Rollback a transaction
+  Future<void> rollbackTransaction() async {
+    if (!_isTransaction) return;
+    try {
+      _db.execute('ROLLBACK;');
+      _isTransaction = false;
+    } catch (e) {
+      throw Exception('Failed to rollback transaction: $e');
+    }
   }
 }

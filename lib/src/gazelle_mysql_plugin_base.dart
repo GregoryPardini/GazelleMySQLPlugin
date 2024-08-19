@@ -1,194 +1,177 @@
 // TODO: Put public facing types in this file.
 
 import 'package:gazelle_core/gazelle_core.dart';
-import 'package:gazelle_mysql_plugin/entities/user.dart';
+
 import 'package:gazelle_mysql_plugin/models/backend_model_provider.dart';
-import 'package:gazelle_mysql_plugin/utils/query/query_builder.dart';
-import 'package:gazelle_mysql_plugin/utils/query/sys_query.dart';
+import 'package:gazelle_mysql_plugin/utils/db/gazelle_database.dart';
+import 'package:gazelle_mysql_plugin/utils/query/db_transaction.dart';
+
 import 'package:gazelle_mysql_plugin/utils/query/table_updater.dart';
-import 'package:sqlite3/sqlite3.dart';
-import 'package:uuid/uuid.dart';
 
 class GazelleMysqlPluginBase implements GazellePlugin {
   // public attributes
-  final List<Type> modelToCreate;
+  final BackendModelProvider _backendModelProvider;
   final DropType dropType;
 
   GazelleMysqlPluginBase({
-    required this.modelToCreate,
+    required BackendModelProvider backendModelProvider,
     this.dropType = DropType.soft,
-  });
+  }) : _backendModelProvider = backendModelProvider;
 
   // private attributes
-  late final Database _db;
-  final List<Type> _modelTables = [];
+  late final GazelleDatabase _db;
 
   @override
   Future<void> initialize(GazelleContext context) async {
-    _db = sqlite3.open('gazelle.db');
-
-    _checkDbTables();
+    _db = await GazelleDatabase.open(
+      'gazelle.db',
+      _backendModelProvider,
+      dropType: dropType,
+    );
   }
 
-  Future<String?> insert<T>(T model) async {
-    // get the model type
-    final modelType = BackendModelProvider().getModelTypeFor(model.runtimeType);
-
-    // get the map of the model attributes
-    final modelAttributeMap = modelType.modelAttributes;
-
-    // get the json data from the model
-    final jsonData = modelType.toJson(model);
-
-    // Check and assign UUID if id is null
-    if (jsonData['id'] == null) {
-      var uuid = Uuid();
-      jsonData['id'] = uuid.v4(); // Generate a version 4 UUID
-    }
-
-    // create part of the query for the fields
-    String fields = modelAttributeMap.keys.join(", ");
-
-    // create part of the query for the values placeholders
-    String valuesPlaceholder =
-        List.filled(modelAttributeMap.length, "?").join(", ");
-
-    // create the query
-    String query =
-        "INSERT INTO ${model.runtimeType.toString().toLowerCase()} ($fields) VALUES ($valuesPlaceholder)";
-
-    // get the values from the json data
-    List<dynamic> values =
-        modelAttributeMap.keys.map((key) => jsonData[key]).toList();
+  /// Insert an entity into the database
+  /// Returns the id of the inserted entity
+  /// Throws an exception if an error occurs
+  /// Example:
+  /// ```dart
+  /// final id = await context.getPlugin<GazelleMysqlPluginBase>().insert(User(
+  ///   id: null,
+  ///   name: "name",
+  ///   email: "email",
+  ///   age: 20,
+  ///   dateOfBirth: DateTime.now(),
+  ///   height: 1.8,
+  ///   isDeleted: false,
+  ///   password: "password",
+  /// ));
+  /// ```
+  /// The above code will insert a new user into the database
+  /// and return the id of the inserted user
+  Future<String?> insert<T>(T entity) async {
+    InsertTransaction<T> insertTransaction =
+        InsertTransaction<T>(entity: entity);
 
     try {
-      _db.execute(query, values);
-      return jsonData['id'];
+      final id = insertTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      return id;
     } catch (e) {
       throw Exception('Error inserting data: $e');
     }
   }
 
+  /// Get an entity from the database
+  /// Returns the entity if found, otherwise returns null
+  /// Throws an exception if an error occurs
+  /// Example:
+  /// ```dart
+  /// final user = context.getPlugin<GazelleMysqlPluginBase>().get<User>('id');
+  /// ```
+  /// The above code will get the user with the id 'id' from the database
+  /// and return the user if found, otherwise return null
+  /// The type of the entity is inferred from the type of the variable
+  /// in which the result is stored
+  /// If the entity is not found, the result will be null
+  /// If an error occurs, an exception will be thrown
   T? get<T>(String id) {
-    // get the model type that is the name of the table
-    final String table = T.toString().toLowerCase();
-
-    // check if the table exists
-    if (!_modelTables.contains(T)) {
-      throw Exception('Table $table does not exist');
-    }
-
-    // create the query
-    final query = 'SELECT * FROM $table WHERE id = ?';
-
-    // get the result from the query
-    final result = _db.select(query, [id]);
-
-    // check if the result is empty
-    if (result.isEmpty) {
-      return null;
-    }
-
-    // get the first row from the result
-    final row = result.first;
-
-    // get the model type
-    final modelType = BackendModelProvider().getModelTypeFor(T);
-
+    GetTransaction<T> getTransaction = GetTransaction<T>(id: id);
     try {
-      // get the model from the row
-      final User user = modelType.fromJson(row);
-
-      // return the model
-      return user as T;
+      final entity = getTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      return entity;
     } catch (e) {
       throw Exception('Error getting data: $e');
     }
   }
 
+  /// Get all entities of a given type from the database
+  /// Returns a list of entities if found, otherwise returns an empty list
+  /// Throws an exception if an error occurs
+  /// Example:
+  /// ```dart
+  /// final users = context.getPlugin<GazelleMysqlPluginBase>().getAll<User>();
+  /// ```
+  /// The above code will get all the users from the database
+  /// and return a list of users if found, otherwise return an empty list
+  /// The type of the entity is inferred from the type of the variable
+  /// in which the result is stored
+  /// If no entities are found, the result will be an empty list
+  /// If an error occurs, an exception will be thrown
   List<T> getAll<T>() {
-    // get the model type that is the name of the table
-    final String table = T.toString().toLowerCase();
-
-    // check if the table exists
-    if (!_modelTables.contains(T)) {
-      throw Exception('Table $table does not exist');
-    }
-
-    // create the query
-    final query = 'SELECT * FROM $table ';
-
-    // get the result from the query
-    final result = _db.select(query);
-
-    // check if the result is empty
-    if (result.isEmpty) {
-      return [];
-    }
-
-    // get the model type
-    final modelType = BackendModelProvider().getModelTypeFor(T);
-
+    final GetAllTransaction<T> getAllTransaction = GetAllTransaction<T>();
     try {
-      List<T> resultList = [];
-      for (var row in result) {
-        // get the model from the row
-        final T model = modelType.fromJson(row);
-        // add the model to the list
-        resultList.add(model);
-      }
-
-      return resultList;
+      final List<T> entities = getAllTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      return entities;
     } catch (e) {
       throw Exception('Error getting data: $e');
     }
   }
 
-  void _checkDbTables() {
-    final tables = SysQuery(_db).getTables();
-    for (var i = 0; i < modelToCreate.length; i++) {
-      final model = modelToCreate[i];
-      // Check if the table exists and create it if it doesn't
-      // Otherwise update the table schema adding or removing columns
-      if (tables
-          .where((element) => element.name == model.toString().toLowerCase())
-          .isEmpty) {
-        _createTable(model);
-      } else {
-        TableUpdater(_db).updateTableSchema(
-          entity: model,
-          dropType: dropType,
-          currentSchema: tables[i].columnsType,
+  /// Update an entity in the database
+  /// Returns the updated entity
+  /// Throws an exception if an error occurs
+  /// Example:
+  /// ```dart
+  /// final updatedUser = context.getPlugin<GazelleMysqlPluginBase>().update<User>(user);
+  /// ```
+  /// The above code will update the user in the database
+  /// and return the updated user
+  T update<T>(T entity) {
+    UpdateTransaction<T> updateTransaction =
+        UpdateTransaction<T>(entity: entity);
+
+    try {
+      final updatedEntity = updateTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      return updatedEntity;
+    } catch (e) {
+      throw Exception('Error updating data: $e');
+    }
+  }
+
+  /// Delete an entity from the database
+  /// Returns the id of the deleted entity
+  /// Throws an exception if an error occurs
+  /// Example:
+  /// ```dart
+  /// final id = context.getPlugin<GazelleMysqlPluginBase>().delete<User>('id');
+  /// ```
+  /// The above code will delete the user with the id 'id' from the database
+  /// and return the id of the deleted user
+  String? delete<T>(String id) {
+    DeleteTransaction<T> deleteTransaction = DeleteTransaction<T>(id: id);
+    try {
+      final id = deleteTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      return id;
+    } catch (e) {
+      throw Exception('Error deleting data: $e');
+    }
+  }
+
+  Future<List<dynamic>> transaction(List<DbTransaction> operations) async {
+    try {
+      _db.sysQuery.beginTransaction();
+
+      final List<dynamic> results = [];
+      for (var operation in operations) {
+        final result = operation.execute(
+          _db.queryManager,
+          _backendModelProvider,
+          _db.sysQuery,
         );
-        _modelTables.add(model);
+        results.add(result);
       }
 
-      for (var table in tables) {
-        if (!modelToCreate
-            .map((e) => e.toString().toLowerCase())
-            .contains(table.name)) {
-          // notify the user that the table is not used anymore
-          print('Table ${table.name} is not used anymore');
-        }
-      }
-    }
-  }
-
-  void _createTable(Type modelType) async {
-    try {
-      _db.execute(QueryBuilder.createTable(modelType));
-      _modelTables.add(modelType);
+      _db.sysQuery.commitTransaction();
+      print('Transazione completata con successo.');
+      return results;
     } catch (e) {
-      throw Exception('Error creating table: $e');
-    }
-  }
-
-  void dropTable(Type modelType) async {
-    try {
-      _db.execute('DROP TABLE IF EXISTS ${modelType.toString().toLowerCase()}');
-      _modelTables.remove(modelType);
-    } catch (e) {
-      throw Exception('Error dropping table: $e');
+      _db.sysQuery.rollbackTransaction();
+      print('Errore durante la transazione: $e');
+      throw Exception('Transazione fallita: $e');
     }
   }
 }

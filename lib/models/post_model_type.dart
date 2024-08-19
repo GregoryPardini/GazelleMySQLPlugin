@@ -1,3 +1,4 @@
+import 'package:gazelle_mysql_plugin/models/user_model_type.dart';
 import 'package:gazelle_serialization/gazelle_serialization.dart';
 
 import '../entities/post.dart';
@@ -13,6 +14,8 @@ class PostModelType extends GazelleModelType<Post> {
       createdAt: DateTime.parse(json["createdAt"] as String),
       isDeleted: json["isDeleted"] == 0 ? false : true,
       viralScore: json["viralScore"] as double,
+      user:
+          json["user"] != null ? UserModelType().fromJson(json["user"]) : null,
     );
   }
 
@@ -26,6 +29,7 @@ class PostModelType extends GazelleModelType<Post> {
       "createdAt": value.createdAt.toIso8601String(),
       "isDeleted": value.isDeleted,
       "viralScore": value.viralScore,
+      "user": value.user != null ? UserModelType().toJson(value.user!) : null,
     };
   }
 
@@ -38,5 +42,6 @@ class PostModelType extends GazelleModelType<Post> {
         "createdAt": "DateTime",
         "isDeleted": "bool",
         "viralScore": "double",
+        "user": "User?",
       };
 }
