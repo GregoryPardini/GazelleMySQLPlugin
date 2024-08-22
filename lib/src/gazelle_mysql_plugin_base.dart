@@ -73,11 +73,11 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// in which the result is stored
   /// If the entity is not found, the result will be null
   /// If an error occurs, an exception will be thrown
-  T? get<T>(String id) {
-    GetTransaction<T> getTransaction = GetTransaction<T>(id: id);
+  Future<T?> get<T>(String id) async {
+    GetTransaction getTransaction = GetTransaction(id: id, entityType: T);
     try {
-      final entity = getTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery);
+      final entity = await getTransaction.execute(
+          _db.queryManager, _backendModelProvider, _db.sysQuery) as T?;
       return entity;
     } catch (e) {
       throw Exception('Error getting data: $e');
@@ -97,10 +97,10 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// in which the result is stored
   /// If no entities are found, the result will be an empty list
   /// If an error occurs, an exception will be thrown
-  List<T> getAll<T>() {
+  Future<List<T>> getAll<T>() async {
     final GetAllTransaction<T> getAllTransaction = GetAllTransaction<T>();
     try {
-      final List<T> entities = getAllTransaction.execute(
+      final List<T> entities = await getAllTransaction.execute(
           _db.queryManager, _backendModelProvider, _db.sysQuery);
       return entities;
     } catch (e) {
@@ -117,14 +117,14 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// ```
   /// The above code will update the user in the database
   /// and return the updated user
-  T update<T>(T entity) {
-    UpdateTransaction<T> updateTransaction =
-        UpdateTransaction<T>(entity: entity);
+  Future<String?> update<T>(T entity, {bool updateRecursive = true}) async {
+    UpdateTransaction updateTransaction =
+        UpdateTransaction(entity: entity, updateRecursive: updateRecursive);
 
     try {
       final updatedEntity = updateTransaction.execute(
           _db.queryManager, _backendModelProvider, _db.sysQuery);
-      return updatedEntity;
+      return await updatedEntity;
     } catch (e) {
       throw Exception('Error updating data: $e');
     }
@@ -139,10 +139,14 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// ```
   /// The above code will delete the user with the id 'id' from the database
   /// and return the id of the deleted user
-  String? delete<T>(String id) {
-    DeleteTransaction<T> deleteTransaction = DeleteTransaction<T>(id: id);
+  Future<String?> delete<T>(String id) async {
+    DeleteTransaction deleteTransaction = DeleteTransaction(
+      id: id,
+      entityType: T,
+      deleteRecursive: true,
+    );
     try {
-      final id = deleteTransaction.execute(
+      final id = await deleteTransaction.execute(
           _db.queryManager, _backendModelProvider, _db.sysQuery);
       return id;
     } catch (e) {
@@ -156,7 +160,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
 
       final List<dynamic> results = [];
       for (var operation in operations) {
-        final result = operation.execute(
+        final result = await operation.execute(
           _db.queryManager,
           _backendModelProvider,
           _db.sysQuery,

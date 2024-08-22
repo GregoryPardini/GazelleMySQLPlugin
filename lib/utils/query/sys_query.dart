@@ -10,10 +10,10 @@ class TableInformation {
 class SysQuery {
   final Database _db;
 
-  bool _isTransaction = false;
   SysQuery(this._db);
 
-  bool get isTransaction => _isTransaction;
+  int transactionCount = 0;
+  bool get isTransaction => transactionCount > 0;
 
   Map<String, String> getCurrentSchema(String tableName) {
     // base query to get the schema of the table
@@ -104,34 +104,39 @@ class SysQuery {
 
   /// Begin a transaction
   Future<void> beginTransaction() async {
-    if (_isTransaction) return;
-    try {
-      _db.execute('BEGIN TRANSACTION;');
-      _isTransaction = true;
-    } catch (e) {
-      throw Exception('Failed to begin transaction: $e');
+    if (transactionCount == 0) {
+      try {
+        _db.execute('BEGIN TRANSACTION;');
+      } catch (e) {
+        throw Exception('Failed to begin transaction: $e');
+      }
     }
+    transactionCount++;
   }
 
   /// Commit a transaction
   Future<void> commitTransaction() async {
-    if (!_isTransaction) return;
-    try {
-      _db.execute('COMMIT;');
-      _isTransaction = false;
-    } catch (e) {
-      throw Exception('Failed to commit transaction: $e');
+    if (transactionCount > 0) {
+      transactionCount--;
+      if (transactionCount == 0) {
+        try {
+          _db.execute('COMMIT;');
+        } catch (e) {
+          throw Exception('Failed to commit transaction: $e');
+        }
+      }
     }
   }
 
   /// Rollback a transaction
   Future<void> rollbackTransaction() async {
-    if (!_isTransaction) return;
-    try {
-      _db.execute('ROLLBACK;');
-      _isTransaction = false;
-    } catch (e) {
-      throw Exception('Failed to rollback transaction: $e');
+    if (transactionCount > 0) {
+      transactionCount = 0;
+      try {
+        _db.execute('ROLLBACK;');
+      } catch (e) {
+        throw Exception('Failed to rollback transaction: $e');
+      }
     }
   }
 }

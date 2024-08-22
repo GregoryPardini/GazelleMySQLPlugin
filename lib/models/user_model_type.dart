@@ -1,3 +1,4 @@
+import 'package:gazelle_mysql_plugin/models/post_model_type.dart';
 import 'package:gazelle_serialization/gazelle_serialization.dart';
 
 import '../entities/user.dart';
@@ -14,6 +15,8 @@ class UserModelType extends GazelleModelType<User> {
       height: json["height"] as double,
       isDeleted: json["isDeleted"] == 0 ? false : true,
       password: json["password"] as String?,
+      post:
+          json["post"] != null ? PostModelType().fromJson(json["post"]) : null,
     );
   }
 
@@ -28,6 +31,7 @@ class UserModelType extends GazelleModelType<User> {
       "height": value.height,
       "isDeleted": value.isDeleted,
       "password": value.password,
+      "post": value.post != null ? PostModelType().toJson(value.post!) : null,
     };
   }
 
@@ -41,5 +45,6 @@ class UserModelType extends GazelleModelType<User> {
         "height": "double",
         "isDeleted": "bool",
         "password": "String?",
+        "post": "Post?",
       };
 }

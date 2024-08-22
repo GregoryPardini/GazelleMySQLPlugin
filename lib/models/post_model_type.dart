@@ -7,7 +7,7 @@ class PostModelType extends GazelleModelType<Post> {
   @override
   Post fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json["id"] as String,
+      id: json["id"] as String?,
       title: json["title"] as String,
       body: json["body"] as String,
       likes: json["likes"] as int,

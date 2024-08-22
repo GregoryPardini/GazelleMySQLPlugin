@@ -28,6 +28,7 @@ void main() async {
                       height: 1.8,
                       isDeleted: false,
                       password: "password",
+                      post: null,
                     ));
             return GazelleResponse(
               statusCode: GazelleHttpStatusCode.success.ok_200,
@@ -55,6 +56,16 @@ void main() async {
                       height: 1.8,
                       isDeleted: false,
                       password: "password",
+                      post: Post(
+                        id: null,
+                        title: "title",
+                        body: "body",
+                        likes: 0,
+                        createdAt: DateTime.now(),
+                        isDeleted: false,
+                        viralScore: 0.0,
+                        user: null,
+                      ),
                     ),
                   ),
                 );
@@ -68,7 +79,7 @@ void main() async {
         children: [
           GazelleRoute.parameter(
             name: "id",
-            get: (context, request, response) {
+            get: (context, request, response) async {
               if (request.pathParameters['id'] == null) {
                 return GazelleResponse(
                   statusCode: GazelleHttpStatusCode.error.badRequest_400,
@@ -76,9 +87,9 @@ void main() async {
                 );
               }
               var stopWatch = Stopwatch()..start();
-              final artists = context
+              final artists = await context
                   .getPlugin<GazelleMysqlPluginBase>()
-                  .get<User>(request.pathParameters['id']!);
+                  .get<Post>(request.pathParameters['id']!);
               stopWatch.stop();
               print('Execution time: ${stopWatch.elapsedMilliseconds}ms');
               return GazelleResponse(
@@ -92,7 +103,7 @@ void main() async {
       GazelleRoute(name: 'patch', children: [
         GazelleRoute.parameter(
           name: 'id',
-          get: (context, request, response) {
+          get: (context, request, response) async {
             if (request.pathParameters['id'] == null) {
               return GazelleResponse(
                 statusCode: GazelleHttpStatusCode.error.badRequest_400,
@@ -101,16 +112,37 @@ void main() async {
             }
             var stopWatch = Stopwatch()..start();
             final artists =
-                context.getPlugin<GazelleMysqlPluginBase>().update<User>(User(
-                      id: request.pathParameters['id'],
-                      name: "ANDATONEEE",
-                      email: "VOLONEEE",
-                      age: 20,
-                      dateOfBirth: DateTime.now(),
-                      height: 1.8,
-                      isDeleted: false,
-                      password: "password",
-                    ));
+                await context.getPlugin<GazelleMysqlPluginBase>().update<Post>(
+                      Post(
+                        id: "3ac38594-4f98-4eba-95a9-d1cd1e08bd97",
+                        title: "title",
+                        body: "body",
+                        likes: 0,
+                        createdAt: DateTime.now(),
+                        isDeleted: false,
+                        viralScore: 0.0,
+                        user: User(
+                          id: null,
+                          name: "name",
+                          email: "email",
+                          age: 20,
+                          dateOfBirth: DateTime.now(),
+                          height: 1.8,
+                          isDeleted: false,
+                          password: "password",
+                          post: Post(
+                            id: null,
+                            title: "title",
+                            body: "body",
+                            likes: 0,
+                            createdAt: DateTime.now(),
+                            isDeleted: false,
+                            viralScore: 0.0,
+                            user: null,
+                          ),
+                        ),
+                      ),
+                    );
             stopWatch.stop();
             print('Execution time: ${stopWatch.elapsedMilliseconds}ms');
             return GazelleResponse(
@@ -122,9 +154,10 @@ void main() async {
       ]),
       GazelleRoute(
           name: 'getAll',
-          get: (context, request, response) {
-            final artists =
-                context.getPlugin<GazelleMysqlPluginBase>().getAll<User>();
+          get: (context, request, response) async {
+            final artists = await context
+                .getPlugin<GazelleMysqlPluginBase>()
+                .getAll<Post>();
             return GazelleResponse(
               statusCode: GazelleHttpStatusCode.success.ok_200,
               body: artists,
@@ -133,7 +166,7 @@ void main() async {
       GazelleRoute(name: 'delete', children: [
         GazelleRoute.parameter(
           name: 'id',
-          get: (context, request, response) {
+          get: (context, request, response) async {
             if (request.pathParameters['id'] == null) {
               return GazelleResponse(
                 statusCode: GazelleHttpStatusCode.error.badRequest_400,
@@ -141,9 +174,9 @@ void main() async {
               );
             }
             var stopWatch = Stopwatch()..start();
-            final artists = context
+            final artists = await context
                 .getPlugin<GazelleMysqlPluginBase>()
-                .delete<User>(request.pathParameters['id']!);
+                .delete<Post>(request.pathParameters['id']!);
             stopWatch.stop();
             print('Execution time: ${stopWatch.elapsedMilliseconds}ms');
             return GazelleResponse(
@@ -177,6 +210,7 @@ void main() async {
               height: 1.8,
               isDeleted: false,
               password: "password",
+              post: null,
             )),
             InsertTransaction(
                 entity: User(
@@ -188,6 +222,7 @@ void main() async {
               height: 1.8,
               isDeleted: false,
               password: "password",
+              post: null,
             )),
           ]);
 

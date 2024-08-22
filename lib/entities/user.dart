@@ -1,3 +1,5 @@
+import 'package:gazelle_mysql_plugin/entities/post.dart';
+
 class User {
   final String? id;
   final String name;
@@ -7,6 +9,7 @@ class User {
   final double height;
   final bool isDeleted;
   final String? password;
+  final Post? post;
 
   const User({
     required this.id,
@@ -17,5 +20,6 @@ class User {
     required this.height,
     required this.isDeleted,
     required this.password,
+    required this.post,
   });
 }

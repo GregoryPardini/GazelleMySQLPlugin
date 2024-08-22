@@ -81,11 +81,11 @@ class QueryManager {
 
   /// Get the prepared statement get for the given entity
   /// example: get<User>();
-  PreparedStatement get<T>() {
-    if (!_preparedStatements.containsKey(T)) {
+  PreparedStatement get(Type entityTye) {
+    if (!_preparedStatements.containsKey(entityTye)) {
       throw Exception('Entity not prepared');
     }
-    return _preparedStatements[T]!['select']!;
+    return _preparedStatements[entityTye]!['select']!;
   }
 
   /// Get the prepared statement insert for the given entity
@@ -99,20 +99,20 @@ class QueryManager {
 
   /// Get the prepared statement update for the given entity
   /// example: update<User>();
-  PreparedStatement update<T>() {
-    if (!_preparedStatements.containsKey(T)) {
+  PreparedStatement update(dynamic entity) {
+    if (!_preparedStatements.containsKey(entity.runtimeType)) {
       throw Exception('Entity not prepared');
     }
-    return _preparedStatements[T]!['update']!;
+    return _preparedStatements[entity.runtimeType]!['update']!;
   }
 
   /// Get the prepared statement delete for the given entity
   /// example: delete<User>();
-  PreparedStatement delete<T>() {
-    if (!_preparedStatements.containsKey(T)) {
+  PreparedStatement delete(Type entityType) {
+    if (!_preparedStatements.containsKey(entityType)) {
       throw Exception('Entity not prepared');
     }
-    return _preparedStatements[T]!['delete']!;
+    return _preparedStatements[entityType]!['delete']!;
   }
 
   /// Get the prepared statement getAll for the given entity
@@ -125,6 +125,20 @@ class QueryManager {
     }
     // create the query
     final query = 'SELECT * FROM ${T.toString().toLowerCase()} ';
+
+    // prepare the statement
+    final statement = _db.prepare(query);
+
+    return statement;
+  }
+
+  PreparedStatement getAllIds<T>() {
+    // check if the entity is prepared
+    if (!_preparedStatements.containsKey(T)) {
+      throw Exception('Entity not prepared');
+    }
+    // create the query
+    final query = 'SELECT id FROM ${T.toString().toLowerCase()} ';
 
     // prepare the statement
     final statement = _db.prepare(query);
