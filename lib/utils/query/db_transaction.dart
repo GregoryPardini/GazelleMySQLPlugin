@@ -15,7 +15,7 @@ class InsertTransaction<T> implements DbTransaction {
   InsertTransaction({required this.entity});
 
   @override
-  Future<String?> execute(QueryManager queryManager,
+  Future<String> execute(QueryManager queryManager,
       BackendModelProvider backendModelProvider, SysQuery sysQuery) async {
     final PreparedStatement statement = queryManager.insert(entity);
 
@@ -120,7 +120,7 @@ class UpdateTransaction<T> implements DbTransaction {
   UpdateTransaction({required this.entity, required this.updateRecursive});
 
   @override
-  Future<String?> execute(QueryManager queryManager,
+  Future<String> execute(QueryManager queryManager,
       BackendModelProvider backendModelProvider, SysQuery sysQuery) async {
     final PreparedStatement statement = queryManager.update(entity);
     // Get the model type
@@ -225,7 +225,7 @@ class DeleteTransaction implements DbTransaction {
   });
 
   @override
-  Future<String?> execute(QueryManager queryManager,
+  Future<String> execute(QueryManager queryManager,
       BackendModelProvider backendModelProvider, SysQuery sysQuery) async {
     final PreparedStatement statement = queryManager.delete(entityType);
     final modelType = backendModelProvider.getModelTypeFor(entityType);

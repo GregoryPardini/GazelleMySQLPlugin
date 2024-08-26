@@ -7,7 +7,11 @@ class DbChecker {
   final QueryManager _queryManager;
   final TableUpdater _tableUpdater;
 
-  DbChecker(this._tableUpdater, this._queryManager, this._sysQuery);
+  DbChecker(
+    this._tableUpdater,
+    this._queryManager,
+    this._sysQuery,
+  );
 
   Future<void> checkDb(
     List<Type> modelToCreate,

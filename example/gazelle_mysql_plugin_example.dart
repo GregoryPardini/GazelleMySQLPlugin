@@ -176,7 +176,7 @@ void main() async {
             var stopWatch = Stopwatch()..start();
             final artists = await context
                 .getPlugin<GazelleMysqlPluginBase>()
-                .delete<Post>(request.pathParameters['id']!);
+                .delete<Post>(request.pathParameters['id']!, true);
             stopWatch.stop();
             print('Execution time: ${stopWatch.elapsedMilliseconds}ms');
             return GazelleResponse(

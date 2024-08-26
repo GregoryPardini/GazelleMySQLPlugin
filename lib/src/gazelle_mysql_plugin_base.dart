@@ -28,6 +28,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
       _backendModelProvider,
       dropType: dropType,
     );
+    context.addRoutes(_db.routes);
   }
 
   /// Insert an entity into the database
@@ -48,17 +49,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// ```
   /// The above code will insert a new user into the database
   /// and return the id of the inserted user
-  Future<String?> insert<T>(T entity) async {
-    InsertTransaction insertTransaction = InsertTransaction(entity: entity);
-
-    try {
-      final id = insertTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery);
-      return id;
-    } catch (e) {
-      throw Exception('Error inserting data: $e');
-    }
-  }
+  Future<String?> insert<T>(T entity) => _db.insert<T>(entity);
 
   /// Get an entity from the database
   /// Returns the entity if found, otherwise returns null
@@ -73,16 +64,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// in which the result is stored
   /// If the entity is not found, the result will be null
   /// If an error occurs, an exception will be thrown
-  Future<T?> get<T>(String id) async {
-    GetTransaction getTransaction = GetTransaction(id: id, entityType: T);
-    try {
-      final entity = await getTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery) as T?;
-      return entity;
-    } catch (e) {
-      throw Exception('Error getting data: $e');
-    }
-  }
+  Future<T?> get<T>(String id) => _db.get<T>(id);
 
   /// Get all entities of a given type from the database
   /// Returns a list of entities if found, otherwise returns an empty list
@@ -97,16 +79,7 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// in which the result is stored
   /// If no entities are found, the result will be an empty list
   /// If an error occurs, an exception will be thrown
-  Future<List<T>> getAll<T>() async {
-    final GetAllTransaction<T> getAllTransaction = GetAllTransaction<T>();
-    try {
-      final List<T> entities = await getAllTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery);
-      return entities;
-    } catch (e) {
-      throw Exception('Error getting data: $e');
-    }
-  }
+  Future<List<T>> getAll<T>() => _db.getAll<T>();
 
   /// Update an entity in the database
   /// Returns the updated entity
@@ -117,18 +90,8 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// ```
   /// The above code will update the user in the database
   /// and return the updated user
-  Future<String?> update<T>(T entity, {bool updateRecursive = true}) async {
-    UpdateTransaction updateTransaction =
-        UpdateTransaction(entity: entity, updateRecursive: updateRecursive);
-
-    try {
-      final updatedEntity = updateTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery);
-      return await updatedEntity;
-    } catch (e) {
-      throw Exception('Error updating data: $e');
-    }
-  }
+  Future<String?> update<T>(T entity, {bool updateRecursive = true}) =>
+      _db.update<T>(entity, updateRecursive);
 
   /// Delete an entity from the database
   /// Returns the id of the deleted entity
@@ -139,42 +102,9 @@ class GazelleMysqlPluginBase implements GazellePlugin {
   /// ```
   /// The above code will delete the user with the id 'id' from the database
   /// and return the id of the deleted user
-  Future<String?> delete<T>(String id) async {
-    DeleteTransaction deleteTransaction = DeleteTransaction(
-      id: id,
-      entityType: T,
-      deleteRecursive: true,
-    );
-    try {
-      final id = await deleteTransaction.execute(
-          _db.queryManager, _backendModelProvider, _db.sysQuery);
-      return id;
-    } catch (e) {
-      throw Exception('Error deleting data: $e');
-    }
-  }
+  Future<String?> delete<T>(String id, bool deleteRecursive) =>
+      _db.delete<T>(id, deleteRecursive);
 
-  Future<List<dynamic>> transaction(List<DbTransaction> operations) async {
-    try {
-      _db.sysQuery.beginTransaction();
-
-      final List<dynamic> results = [];
-      for (var operation in operations) {
-        final result = await operation.execute(
-          _db.queryManager,
-          _backendModelProvider,
-          _db.sysQuery,
-        );
-        results.add(result);
-      }
-
-      _db.sysQuery.commitTransaction();
-      print('Transazione completata con successo.');
-      return results;
-    } catch (e) {
-      _db.sysQuery.rollbackTransaction();
-      print('Errore durante la transazione: $e');
-      throw Exception('Transazione fallita: $e');
-    }
-  }
+  Future<List<dynamic>> transaction(List<DbTransaction> operations) =>
+      _db.transaction(operations);
 }
